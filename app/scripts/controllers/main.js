@@ -23,78 +23,89 @@ angular.module('pocPosApp')
       controller : 'PosCtrl'
     })
 }])
-.controller('PosCtrl', ['$rootScope', '$scope', 'POS_EVENTS', function ($rootScope, $scope, POS_EVENTS) {
+.factory('BillidService', [function(){
+  var service = {};
+
+  service.notify = function(mobileNumber, order) {
+    // TODO make the receipt and call the API
+    //var receipt = createReceipt(order)
+    console.log('saving receipt for customer mobile ' + mobileNumber + ' order ' + order);
+  }
+  return service;
+}])
+.controller('PosCtrl', ['$rootScope', '$scope', 'POS_EVENTS', 'ModalService', 'BillidService',
+  function ($rootScope, $scope, POS_EVENTS, ModalService, BillidService) {
 
     $scope.drinks = [{
         id: 0,
         name: "Still Water",
-        price: "1",
+        price: 1.00,
     },
     {
         id: 1,
         name: "Sparkling Water",
-        price: "1.10",
+        price: 1.10,
     },
     {
         id: 2,
         name: "Espresso",
-        price: "1.20",
+        price: 1.20,
     },
     {
         id: 3,
         name: "Cappuccino",
-        price: "1.30",
+        price: 1.30,
     },
     {
         id: 4,
         name: "Tea",
-        price: "1.90",
+        price: 1.90,
     },
     {
         id: 5,
         name: "Hot Chocolate",
-        price: "2.10",
+        price: 2.10,
     },
     {
         id: 6,
         name: "Coke",
-        price: "2.00",
+        price: 2.00,
     },
     {
         id: 7,
         name: "Orange Juice",
-        price: "1.90",
+        price: 1.90,
     }];
 
     $scope.foods = [{
         id: 8,
         name: "Waffle",
-        price: "1.50",
+        price: 1.50,
     },
     {
         id: 9,
         name: "Brioche",
-        price: "1.30",
+        price: 1.30,
     },
     {
         id: 10,
         name: "Cheesecake",
-        price: "1.70",
+        price: 1.70,
     },
     {
         id: 11,
         name: "Sandwich",
-        price: "2.70",
+        price: 2.70,
     },
     {
         id: 12,
         name: "Donuts",
-        price: "1.90",
+        price: 1.90,
     },
     {
         id: 13,
         name: "Tortilla",
-        price: "1.90",
+        price: 1.90,
     }];
 
     $scope.order = [];
@@ -160,7 +171,7 @@ angular.module('pocPosApp')
         for (var i = 0; i < $scope.order.length; i++) {
             tot += ($scope.order[i].price * $scope.order[i].qty)
         }
-        return tot;
+        return tot * 1.00;
     };
 
     $scope.clearOrder = function () {
@@ -168,9 +179,7 @@ angular.module('pocPosApp')
     };
 
     $scope.checkout = function (index) {
-        // TODO, create a modal dialog to collect mobile number of the customer
-        // and call billid api
-        alert($scope.getDate() + " - Order Number: " + ($scope.totOrders+1) + "\n\nOrder amount: $" + $scope.getTotal().toFixed(2) + "\n\nPayment received. Thanks.");
+        $scope.pushReceipt($scope.order);
         $rootScope.$broadcast(POS_EVENTS.billCreated);
         $scope.order = [];
         $scope.totOrders += 1;
@@ -190,4 +199,22 @@ angular.module('pocPosApp')
         }
     };
 
+    $scope.pushReceipt = function(order){
+      ModalService.showModal({
+        templateUrl: "views/get-mobile-number.html",
+        controller : "GetMobileNumberCtrl"
+      }).then(function(modal){
+        modal.element.modal();
+        modal.close.then(function(mobileNumber){
+          //Notify
+          BillidService.notify(mobileNumber, order);
+        });
+      });
+    };
+
+}])
+.controller('GetMobileNumberCtrl', ['$scope', 'close', function($scope, close) {
+  $scope.close = function(result) {
+ 	  close(result, 500); // close, but give 500ms for bootstrap to animate
+  };
 }]);

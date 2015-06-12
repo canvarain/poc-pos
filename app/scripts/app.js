@@ -18,5 +18,6 @@ angular
     'ngTouch',
     'ui.router',
     'angular-storage',
-    'angular-jwt'
+    'angular-jwt',
+    'angularModalService'
   ]);
