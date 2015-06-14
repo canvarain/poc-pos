@@ -32,7 +32,8 @@ angular.module('pocPosApp')
 
     var _location = 'MAIN LOCATION',
     _type = 'purchase',
-    _countryCode = '91',
+    _storeId = '123123ffsdfsdfsdfd',
+    _countryCode = '+91',
     _items = _.map(order, function(o){
       return _.pick(o, ['name', 'qty', 'price'])
     });
@@ -42,6 +43,7 @@ angular.module('pocPosApp')
       "amount" : total,
       "type": _type,
       "countryCode": _countryCode,
+      "storeId": _storeId,
       "mobileNumber": mobileNumber,
       "items" : _items
     };

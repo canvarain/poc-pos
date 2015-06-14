@@ -24,6 +24,7 @@
           <ul class="nav navbar-nav">
             <a href="/" class="navbar-brand"><i class="ion-images"></i> billid POS</a>
             <li ng-if="isAuthenticated()"><a href="#/">Home</a></li>
+            <li ng-if="!isAuthenticated()"><a ui-sref="login">Login</a></li>
             <li ng-if="isAuthenticated()"><a ng-click="logout()" href="">Logout</a></li>
           </ul>
         </div>
