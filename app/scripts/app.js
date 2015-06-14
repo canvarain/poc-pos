@@ -19,5 +19,7 @@ angular
     'ui.router',
     'angular-storage',
     'angular-jwt',
-    'angularModalService'
-  ]);
+    'billidpoc'
+  ])
+  .constant('ENVIRONMENT', 'STAGING')
+  .constant('BASE_URL', 'https://billid-poc-api.herokuapp.com');

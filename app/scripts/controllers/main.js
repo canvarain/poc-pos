@@ -11,30 +11,83 @@ angular.module('pocPosApp')
 .constant('POS_EVENTS', {billCreated: 'bill-created'})
 .config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider){
 
-  $urlRouterProvider.otherwise( function($injector, $location) {
-    var $state = $injector.get('$state');
-    $state.go('home');
-  });
-
   $stateProvider
     .state('home', {
       url: '/',
       templateUrl: 'views/home.html',
       controller : 'PosCtrl'
     })
+    .state('login', {
+      url: '/login',
+      templateUrl: 'views/login.html',
+      controller: 'LoginCtrl'
+    });
+
+    $urlRouterProvider.otherwise('/');
 }])
-.factory('BillidService', [function(){
+.factory('BillidService', ['Receipts',function(Receipts){
   var service = {};
 
-  service.notify = function(mobileNumber, order) {
+  function createReceipt(mobileNumber, order, total) {
+
+    var _location = 'MAIN LOCATION',
+    _type = 'purchase',
+    _countryCode = '91',
+    _items = _.map(order, function(o){
+      return _.pick(o, ['name', 'qty', 'price'])
+    });
+
+    var receipt = {
+      "location": _location,
+      "amount" : total,
+      "type": _type,
+      "countryCode": _countryCode,
+      "mobileNumber": mobileNumber,
+      "items" : _items
+    };
+
+    return receipt;
+  };
+
+  service.notify = function(mobileNumber, order, total) {
     // TODO make the receipt and call the API
-    //var receipt = createReceipt(order)
-    console.log('saving receipt for customer mobile ' + mobileNumber + ' order ' + order);
+    var receipt = createReceipt(mobileNumber, order, total)
+    Receipts.create(receipt);
+    console.log('saving receipt for customer mobile ' + JSON.stringify(receipt));
   }
+
   return service;
 }])
-.controller('PosCtrl', ['$rootScope', '$scope', 'POS_EVENTS', 'ModalService', 'BillidService',
-  function ($rootScope, $scope, POS_EVENTS, ModalService, BillidService) {
+.controller('LoginCtrl', ['$scope', '$state', 'Auth', function($scope, $state, Auth) {
+    $scope.login = function(credentials) {
+      $scope.error = false;
+      $scope.errorMessage = '';
+      if(credentials && credentials.username && credentials.password) {
+        Auth.login(credentials).then(function(payload) {
+          $state.go('home')
+        }, function(reason) {
+          if(reason.status === 401) {
+            $scope.error = true;
+            $scope.errorMessage = 'Invalid username or password';
+          }
+        });
+      } else {
+        $scope.error = true;
+        $scope.errorMessage = 'Enter username and password';
+      }
+    }
+  }])
+.controller('PosCtrl', ['$rootScope', '$scope', '$state', 'POS_EVENTS', 'BillidService', 'Auth',
+  function ($rootScope, $scope, $state, POS_EVENTS, BillidService, Auth) {
+
+    $scope.isAuthenticated = function() {
+      return Auth.isAuthenticated();
+    };
+
+    $scope.logout = function() {
+        Auth.logout();
+        $state.go('login');
+    };
 
     $scope.drinks = [{
         id: 0,
@@ -179,7 +232,13 @@ angular.module('pocPosApp')
     };
 
     $scope.checkout = function (index) {
-        $scope.pushReceipt($scope.order);
+
+        var mobileNumber = prompt("Please enter customer mobile number", "88888888");
+
+        if (mobileNumber != null) {
+          BillidService.notify(mobileNumber, $scope.order, $scope.getTotal());
+        }
+
         $rootScope.$broadcast(POS_EVENTS.billCreated);
         $scope.order = [];
         $scope.totOrders += 1;
@@ -198,23 +257,4 @@ angular.module('pocPosApp')
             $('#myTab a[href="#food"]').tab('show')
         }
     };
-
-    $scope.pushReceipt = function(order){
-      ModalService.showModal({
-        templateUrl: "views/get-mobile-number.html",
-        controller : "GetMobileNumberCtrl"
-      }).then(function(modal){
-        modal.element.modal();
-        modal.close.then(function(mobileNumber){
-          //Notify
-          BillidService.notify(mobileNumber, order);
-        });
-      });
-    };
-
-}])
-.controller('GetMobileNumberCtrl', ['$scope', 'close', function($scope, close) {
-  $scope.close = function(result) {
- 	  close(result, 500); // close, but give 500ms for bootstrap to animate
-  };
 }]);
